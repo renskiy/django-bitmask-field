@@ -1,2 +1,2 @@
 # django-bitmask-field
-BitmaskField implementation for Django
+BitmaskField implementation for Django ORM
