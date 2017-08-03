@@ -9,7 +9,7 @@ class BitmaskFormField(forms.TypedMultipleChoiceField):
     def prepare_value(self, value):
         if not isinstance(value, list):
             return [
-                int(bit) * 2 ** place
+                int(bit) * (2 ** place)
                 for place, bit in enumerate('{:b}'.format(value)[::-1])
             ]
         return value
@@ -25,10 +25,9 @@ class BitmaskFormField(forms.TypedMultipleChoiceField):
 
 class BitmaskField(models.IntegerField):
 
-    # TODO if value > 127: value = -(value ^ 128) - 1,
-    # reverse: if value < 0: abs(value + 1) ^ 128
+    description = _('Bitmask (4 byte)')
 
-    description = _('Bitmask')
+    max_value = 2147483647
 
     def _check_choices(self):
         errors = super(BitmaskField, self)._check_choices()
@@ -65,12 +64,35 @@ class BitmaskField(models.IntegerField):
             *args, **kwargs
         )
 
+    def from_db_value(self, value, expression, connection, context):
+        if value < 0:
+            value += self.max_value + 1
+        return value
+
     def to_python(self, value):
         if isinstance(value, list):
             return sum(map(int, value))
         return super(BitmaskField, self).to_python(value)
 
+    def get_prep_value(self, value):
+        value = super(BitmaskField, self).get_prep_value(value)
+        return value - self.max_value - 1 if value > self.max_value else value
+
     def formfield(self, **kwargs):
         defaults = {'choices_form_class': BitmaskFormField}
         defaults.update(kwargs)
         return super(BitmaskField, self).formfield(**defaults)
+
+
+class BigBitmaskField(BitmaskField, models.BigIntegerField):
+
+    description = _('BigBitmask (8 byte)')
+
+    max_value = models.BigIntegerField.MAX_BIGINT
+
+
+class SmallBitmaskField(BitmaskField, models.SmallIntegerField):
+
+    description = _('SmallBitmask (2 byte)')
+
+    max_value = 32767
