@@ -25,29 +25,39 @@ class BitmaskFormField(forms.TypedMultipleChoiceField):
 
 class BitmaskField(models.IntegerField):
 
-    description = _('bitmask')
+    # TODO if value > 127: value = -(value ^ 128) - 1,
+    # reverse: if value < 0: abs(value + 1) ^ 128
+
+    description = _('Bitmask')
+
+    def _check_choices(self):
+        errors = super(BitmaskField, self)._check_choices()
+        if not errors:
+            pass  # TODO check keys values (must be positive ints less than 2 ** 32)
+        return errors
 
     def validate(self, value, model_instance):
-        if self.choices and value not in self.empty_values:
-            max_option_key = 0
-            for option_key, option_value in self.choices:
+        # disable standard self.choices validation by resetting its value
+        choices, self.choices = self.choices, None
+        try:
+            super(BitmaskField, self).validate(value, model_instance)
+        finally:
+            # resume original self.choices value
+            self.choices = choices
+
+        if choices and value not in self.empty_values:
+            for option_key, option_value in choices:
                 if isinstance(option_value, (list, tuple)):
-                    max_option_key = max(
-                        max_option_key,
-                        max(*tuple(zip(*option_value))[0]),
-                    )
+                    for optgroup_key, optgroup_value in option_value:
+                        value ^= optgroup_key
                 else:
-                    max_option_key = max(max_option_key, option_key)
-            if value > max_option_key * 2 - 1:
+                    value ^= option_key
+            if value:
                 raise exceptions.ValidationError(
-                    self.error_messages['invalid_choice'],
-                    code='invalid_choice',
+                    _('Value s(value)r contains disabled bit(s)'),
+                    code='disabled_bits',
                     params={'value': value},
                 )
-            # values containing several enabled bits do not equal to any
-            # option_key, so we set it to max_option_key to pass next validation
-            value = max_option_key
-        super(BitmaskField, self).validate(value, model_instance)
 
     def get_choices(self, include_blank=None, *args, **kwargs):
         return super(BitmaskField, self).get_choices(
