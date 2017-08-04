@@ -1,7 +1,9 @@
 from django import test
 from django.core import exceptions, checks
 
-from django_bitmask_field import BitmaskField
+from django_bitmask_field import (
+    BitmaskField, SmallBitmaskField, BigBitmaskField
+)
 
 from .models import TestModel, ContributingModel
 
@@ -10,14 +12,28 @@ class BitmaskFieldTestCase(test.TestCase):
 
     def test_bitmask_returns_error_if_choices_are_not_provided(self):
         bimaskfield = BitmaskField()
-        bimaskfield.contribute_to_class(ContributingModel, 'bitmask')
+        bimaskfield.contribute_to_class(ContributingModel, 'field')
         errors = bimaskfield.check()
         self.assertEqual(1, len(errors))
         error = errors[0]
         self.assertIsInstance(error, checks.Error)
         self.assertEqual("Must provide 'choices'.", error.msg)
 
-    # TODO check choices validation
+    def test_bitmask_return_error_on_choices_overflow(self):
+        cases = dict(
+            bitmask=dict(
+                field=BitmaskField(),
+                last_bit=2147483648,
+            ),
+            big_bitmask=dict(
+                field=BigBitmaskField(),
+                last_bit=9223372036854775808,
+            ),
+            small_bitmask=dict(
+                field=SmallBitmaskField(),
+                last_bit=32768,
+            ),
+        )
 
     def test_bitmaskfield_cleans_valid_choice(self):
         field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1')])
@@ -67,3 +83,4 @@ class BitmaskFieldTestCase(test.TestCase):
 
     # TODO test optgroup choices
     # TODO test last bit of all bitmask fields
+    # TODO check choices validation

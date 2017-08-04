@@ -3,7 +3,10 @@ from django.core import exceptions, checks
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
+from six import integer_types
 from six.moves import reduce
+
+long = integer_types[-1]  # long(codecs.encode(b'hello', 'hex'), 16)
 
 
 class BitmaskFormField(forms.TypedMultipleChoiceField):
@@ -25,6 +28,7 @@ class BitmaskFormField(forms.TypedMultipleChoiceField):
         return self.coerce(value)
 
 
+# TODO use BinaryField
 class BitmaskField(models.IntegerField):
 
     description = _('Bitmask (4 byte)')
