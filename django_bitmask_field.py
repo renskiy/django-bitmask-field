@@ -1,6 +1,7 @@
 from django import forms
-from django.core import exceptions
+from django.core import exceptions, checks
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -30,10 +31,21 @@ class BitmaskField(models.IntegerField):
     max_value = 2147483647
 
     def _check_choices(self):
+        if not self.choices:
+            return [checks.Error("Must provide 'choices'.", obj=self)]
         errors = super(BitmaskField, self)._check_choices()
         if not errors:
             pass  # TODO check keys values (must be positive ints less than 2 ** 32)
         return errors
+
+    @cached_property
+    def all_choices(self, _value=0):
+        for option_key, option_value in self.choices:
+            if isinstance(option_value, (list, tuple)):
+                _value += sum(next(zip(*option_value)))
+            else:
+                _value += option_key
+        return _value
 
     def validate(self, value, model_instance):
         # disable standard self.choices validation by resetting its value
@@ -44,19 +56,12 @@ class BitmaskField(models.IntegerField):
             # resume original self.choices value
             self.choices = choices
 
-        if choices and value not in self.empty_values:
-            for option_key, option_value in choices:
-                if isinstance(option_value, (list, tuple)):
-                    for optgroup_key, optgroup_value in option_value:
-                        value ^= optgroup_key
-                else:
-                    value ^= option_key
-            if value:
-                raise exceptions.ValidationError(
-                    _('Value s(value)r contains disabled bit(s)'),
-                    code='disabled_bits',
-                    params={'value': value},
-                )
+        if value not in self.empty_values and value & self.all_choices != value:
+            raise exceptions.ValidationError(
+                _('Value %(value)r contains disabled bit(s)'),
+                code='disabled_bits',
+                params={'value': value},
+            )
 
     def get_choices(self, include_blank=None, *args, **kwargs):
         return super(BitmaskField, self).get_choices(
@@ -76,6 +81,8 @@ class BitmaskField(models.IntegerField):
 
     def get_prep_value(self, value):
         value = super(BitmaskField, self).get_prep_value(value)
+        if value is None:
+            return value
         return value - self.max_value - 1 if value > self.max_value else value
 
     def formfield(self, **kwargs):
