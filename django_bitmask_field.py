@@ -3,6 +3,7 @@ from django.core import exceptions, checks
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
+from six.moves import reduce
 
 
 class BitmaskFormField(forms.TypedMultipleChoiceField):
@@ -42,9 +43,9 @@ class BitmaskField(models.IntegerField):
     def all_choices(self, _value=0):
         for option_key, option_value in self.choices:
             if isinstance(option_value, (list, tuple)):
-                _value += sum(next(zip(*option_value)))
+                _value |= reduce(int.__or__, next(zip(*option_value)), 0)
             else:
-                _value += option_key
+                _value |= option_key
         return _value
 
     def validate(self, value, model_instance):
@@ -70,7 +71,7 @@ class BitmaskField(models.IntegerField):
         )
 
     def from_db_value(self, value, expression, connection, context):
-        if value < 0:
+        if value is not None and value < 0:
             value += self.max_value + 1
         return value
 
