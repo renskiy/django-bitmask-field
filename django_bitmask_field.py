@@ -1,19 +1,19 @@
 import codecs
 
 from django import forms
-from django.core import exceptions, checks
+from django.core import exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
 from django.utils.functional import cached_property
+from django.utils.six import integer_types, buffer_types
+from django.utils.six.moves import reduce
 from django.utils.translation import ugettext_lazy as _
-from six import integer_types, binary_type
-from six.moves import reduce
 
 long = integer_types[-1]
 
 
 def int2bytes(i):
-    hex_value = '%x' % i
+    hex_value = '{0:x}'.format(i)
     # make length of hex_value a multiple of two
     hex_value = '0' * (len(hex_value) % 2) + hex_value
     return codecs.decode(hex_value, 'hex')
@@ -26,31 +26,37 @@ def bytes2int(b):
 class BitmaskFormField(forms.TypedMultipleChoiceField):
 
     def prepare_value(self, value):
-        if not isinstance(value, list):
-            return [
-                int(bit) * (2 ** place)
-                for place, bit in enumerate('{:b}'.format(value)[::-1])
-            ]
-        return value
+        return [
+            int(bit) * (2 ** place)
+            for place, bit in enumerate('{0:b}'.format(value)[::-1])
+        ]
 
     def has_changed(self, initial, data):
-        return forms.Field.has_changed(self, initial, data)
+        return initial != data
 
     def _coerce(self, value):
-        if value == self.empty_value or value in self.empty_values:
-            return self.empty_value
-        return self.coerce(value)
+        values = super(BitmaskFormField, self)._coerce(value)
+        return reduce(int.__or__, values, 0)
 
 
 class BitmaskField(models.BinaryField):
 
     description = _('Bitmask')
+    default_validators = [validators.MinValueValidator(0)]
+
+    def __init__(self, *args, **kwargs):
+        editable = kwargs.get('editable', True)
+        super(BitmaskField, self).__init__(*args, **kwargs)
+        self.editable = editable
 
     def _check_choices(self):
         errors = super(BitmaskField, self)._check_choices()
         if not errors and self.choices:
             pass  # TODO check keys values (must be positive ints less than 2 ** 32)
         return errors
+
+    def deconstruct(self):
+        return models.Field.deconstruct(self)
 
     @cached_property
     def all_choices(self, _value=0):
@@ -82,12 +88,10 @@ class BitmaskField(models.BinaryField):
             )
 
     def value_to_string(self, obj):
-        return super(models.BinaryField, self).value_to_string(obj)
+        return models.Field.value_to_string(self, obj)
 
     def to_python(self, value):
-        if isinstance(value, list):
-            return reduce(int.__or__, map(self.to_python, value), 0)
-        if isinstance(value, binary_type):
+        if isinstance(value, buffer_types):
             return bytes2int(force_bytes(value))
         return value
 
@@ -102,6 +106,7 @@ class BitmaskField(models.BinaryField):
 
     def formfield(self, **kwargs):
         defaults = {
+            'form_class': forms.IntegerField,
             'choices_form_class': BitmaskFormField,
             'coerce': int,
         }
