@@ -110,8 +110,9 @@ class BitmaskField(models.BinaryField):
         defaults = {
             'form_class': forms.IntegerField,
             'choices_form_class': BitmaskFormField,
-            'coerce': int,
         }
+        if self.choices:
+            defaults['coerce'] = int
         defaults.update(kwargs)
         return super(BitmaskField, self).formfield(**defaults)
 
