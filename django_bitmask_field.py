@@ -26,6 +26,8 @@ def bytes2int(b):
 class BitmaskFormField(forms.TypedMultipleChoiceField):
 
     def prepare_value(self, value):
+        if isinstance(value, list):
+            return value
         return [
             int(bit) * (2 ** place)
             for place, bit in enumerate('{0:b}'.format(value)[::-1])
