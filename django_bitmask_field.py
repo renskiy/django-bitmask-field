@@ -30,16 +30,18 @@ class BitmaskFormField(forms.TypedMultipleChoiceField):
         if isinstance(value, list):
             return value
         return [
-            int(bit) * (2 ** place)
+            long(bit) * (2 ** place)
             for place, bit in enumerate('{0:b}'.format(value)[::-1])
         ]
 
     def has_changed(self, initial, data):
-        return initial != data
+        return initial != self._coerce(data)
 
     def _coerce(self, value):
         values = super(BitmaskFormField, self)._coerce(value)
-        return reduce(int.__or__, values, 0)
+        if values is None:
+            return values
+        return reduce(long.__or__, values, 0)
 
 
 class BitmaskField(models.BinaryField):
@@ -55,7 +57,7 @@ class BitmaskField(models.BinaryField):
     def _check_choices(self):
         errors = super(BitmaskField, self)._check_choices()
         if not errors and self.choices and not all(
-            isinstance(choice, int) and choice >= 0
+            isinstance(choice, integer_types) and choice >= 0
             for choice, description in self.all_choices
         ):
             return [
@@ -82,7 +84,7 @@ class BitmaskField(models.BinaryField):
 
     @cached_property
     def all_values(self):
-        return reduce(int.__or__, next(zip(*self.all_choices)), 0)
+        return reduce(long.__or__, next(zip(*self.all_choices)), 0)
 
     def validate(self, value, model_instance):
         # disable standard self.choices validation by resetting its value
@@ -111,7 +113,7 @@ class BitmaskField(models.BinaryField):
         if isinstance(value, buffer_types):
             return bytes2int(force_bytes(value))
         elif isinstance(value, text_type):
-            return int(value)
+            return long(value)
         return value
 
     def get_prep_value(self, value):
@@ -129,7 +131,7 @@ class BitmaskField(models.BinaryField):
             'choices_form_class': BitmaskFormField,
         }
         if self.choices:
-            defaults['coerce'] = int
+            defaults['coerce'] = long
         defaults.update(kwargs)
         return super(BitmaskField, self).formfield(**defaults)
 

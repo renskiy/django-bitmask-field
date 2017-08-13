@@ -3,7 +3,7 @@ from django.core import exceptions, serializers
 
 from django_bitmask_field import BitmaskField
 
-from .models import TestModel, ContributingModel
+from .models import TestModel, ContributingModel, TestForm
 
 
 class BitmaskFieldTestCase(test.TestCase):
@@ -93,4 +93,63 @@ class BitmaskFieldTestCase(test.TestCase):
 
 
 class BitmaskFormFieldTestCase(test.TestCase):
-    pass
+
+    def test_is_valid(self):
+        cases = dict(
+            empty=dict(
+                data={},
+                is_valid=False,
+                errors={'bitmask', 'bitmask_int'},
+                expected={},
+            ),
+            blank=dict(
+                data={'bitmask': [], 'bitmask_int': ''},
+                is_valid=False,
+                errors={'bitmask', 'bitmask_int'},
+                expected={},
+            ),
+            regular=dict(
+                data={'bitmask': ['1'], 'bitmask_int': '42'},
+                is_valid=True,
+                errors=set(),
+                expected={'bitmask': 1, 'bitmask_int': 42},
+            ),
+        )
+        for case, test_data in cases.items():
+            with self.subTest(case=case):
+                form = TestForm(test_data['data'])
+                self.assertEqual(
+                    test_data['is_valid'],
+                    form.is_valid(),
+                    form.errors.as_text(),
+                )
+                self.assertFalse(test_data['errors'] ^ set(form.errors))
+                self.assertEqual(test_data['expected'], form.cleaned_data)
+
+    def test_has_changed(self):
+        cases = dict(
+            empty=dict(
+                initial=None,
+                data={},
+                has_changed=False,
+            ),
+            scratch=dict(
+                initial=None,
+                data={'bitmask': ['1'], 'bitmask_int': '42'},
+                has_changed=True,
+            ),
+            changed=dict(
+                initial={'bitmask': 1, 'bitmask_int': 42},
+                data={'bitmask': ['1', '4'], 'bitmask_int': '42'},
+                has_changed=True,
+            ),
+            not_changed=dict(
+                initial={'bitmask': 1, 'bitmask_int': 42},
+                data={'bitmask': ['1'], 'bitmask_int': '42'},
+                has_changed=False,
+            ),
+        )
+        for case, test_data in cases.items():
+            with self.subTest(case=case):
+                form = TestForm(test_data['data'], initial=test_data['initial'])
+                self.assertEqual(test_data['has_changed'], form.has_changed())
