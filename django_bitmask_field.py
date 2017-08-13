@@ -56,7 +56,7 @@ class BitmaskField(models.BinaryField):
         errors = super(BitmaskField, self)._check_choices()
         if not errors and self.choices and not all(
             isinstance(choice, int) and choice >= 0
-            for choice, description in self.choices
+            for choice, description in self.all_choices
         ):
             return [
                 checks.Error(
@@ -70,13 +70,19 @@ class BitmaskField(models.BinaryField):
         return models.Field.deconstruct(self)
 
     @cached_property
-    def all_choices(self, _value=0):
+    def all_choices(self):
+        result = []
         for option_key, option_value in self.choices:
             if isinstance(option_value, (list, tuple)):
-                _value |= reduce(int.__or__, next(zip(*option_value)), 0)
+                for opt_key, opt_value in option_value:
+                    result.append((opt_key, opt_value))
             else:
-                _value |= option_key
-        return _value
+                result.append((option_key, option_value))
+        return result
+
+    @cached_property
+    def all_values(self):
+        return reduce(int.__or__, next(zip(*self.all_choices)), 0)
 
     def validate(self, value, model_instance):
         # disable standard self.choices validation by resetting its value
@@ -90,7 +96,7 @@ class BitmaskField(models.BinaryField):
         if (
             choices
             and value not in self.empty_values
-            and value & self.all_choices != value
+            and value & self.all_values != value
         ):
             raise exceptions.ValidationError(
                 _('Value %(value)r contains disabled bit(s)'),

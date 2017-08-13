@@ -10,13 +10,14 @@ class BitmaskFieldTestCase(test.TestCase):
 
     def test_bitmaskfield_return_error_on_invalid_choices(self):
         cases = dict(
-            none=None,
-            str='foo',
-            negative=-1,
+            none=[(None, 'choice')],
+            str=[('foo', 'choice')],
+            negative=[(-1, 'choice')],
+            optgroup=[('optgroup', [(None, 'choice')])],
         )
-        for case, choice in cases.items():
+        for case, choices in cases.items():
             with self.subTest(case=case):
-                field = BitmaskField(choices=[(choice, 'choice')])
+                field = BitmaskField(choices=choices)
                 field.contribute_to_class(ContributingModel, 'bitmask')
                 errors = field.check()
                 self.assertEqual(1, len(errors))
@@ -24,7 +25,7 @@ class BitmaskFieldTestCase(test.TestCase):
                 self.assertEqual("all 'choices' must be of integer type.", error.msg)
 
     def test_bitmaskfield_cleans_valid_choice(self):
-        field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1')])
+        field = BitmaskField(choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])])
         cases = dict(
             first_choice=dict(  # 0001
                 choice=1,
@@ -47,11 +48,11 @@ class BitmaskFieldTestCase(test.TestCase):
                 )
 
     def test_bitmaskfield_works_with_multibit_choices(self):
-        field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1'), (5, 'choice 2')])
+        field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1'), ('optgroup', [(5, 'choice 2')])])
         self.assertEqual(5, field.clean(5, None))
 
     def test_bitmaskfield_raises_error_on_invalid_choice(self):
-        field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1')])
+        field = BitmaskField(choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])])
         cases = dict(
             single_invalid_bit=2,  # 0010
             two_invalid_bits=10,  # 1010
@@ -77,5 +78,8 @@ class BitmaskFieldTestCase(test.TestCase):
                 test_model.save()
                 self.assertEqual(value, TestModel.objects.get(id=test_model.id).bitmask)
 
-    # TODO test optgroup choices
-    # TODO check choices validation
+    # TODO test serialization
+
+
+class BitmaskFormFieldTestCase(test.TestCase):
+    pass
