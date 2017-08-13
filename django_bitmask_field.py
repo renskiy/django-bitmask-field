@@ -1,4 +1,5 @@
 import codecs
+import functools
 
 from django import forms
 from django.core import exceptions, validators
@@ -108,7 +109,7 @@ class BitmaskField(models.BinaryField):
 
     def formfield(self, **kwargs):
         defaults = {
-            'form_class': forms.IntegerField,
+            'form_class': functools.partial(forms.IntegerField, min_value=0),
             'choices_form_class': BitmaskFormField,
         }
         if self.choices:
