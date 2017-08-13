@@ -2,7 +2,7 @@ import codecs
 import functools
 
 from django import forms
-from django.core import exceptions, validators
+from django.core import checks, exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
 from django.utils.functional import cached_property
@@ -54,8 +54,16 @@ class BitmaskField(models.BinaryField):
 
     def _check_choices(self):
         errors = super(BitmaskField, self)._check_choices()
-        if not errors and self.choices:
-            pass  # TODO check keys values (must be positive ints less than 2 ** 32)
+        if not errors and self.choices and not all(
+            isinstance(choice, int) and choice >= 0
+            for choice, description in self.choices
+        ):
+            return [
+                checks.Error(
+                    "all 'choices' must be of integer type.",
+                    obj=self,
+                )
+            ]
         return errors
 
     def deconstruct(self):

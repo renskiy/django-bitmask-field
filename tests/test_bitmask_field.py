@@ -1,5 +1,5 @@
 from django import test
-from django.core import exceptions, checks
+from django.core import exceptions
 
 from django_bitmask_field import BitmaskField
 
@@ -8,13 +8,20 @@ from .models import TestModel, ContributingModel
 
 class BitmaskFieldTestCase(test.TestCase):
 
-    def test_bitmask_return_error_on_choices_overflow(self):
+    def test_bitmaskfield_return_error_on_invalid_choices(self):
         cases = dict(
-            bitmask=dict(
-                field=BitmaskField(),
-                last_bit=2147483648,
-            ),
+            none=None,
+            str='foo',
+            negative=-1,
         )
+        for case, choice in cases.items():
+            with self.subTest(case=case):
+                field = BitmaskField(choices=[(choice, 'choice')])
+                field.contribute_to_class(ContributingModel, 'bitmask')
+                errors = field.check()
+                self.assertEqual(1, len(errors))
+                error = errors[0]
+                self.assertEqual("all 'choices' must be of integer type.", error.msg)
 
     def test_bitmaskfield_cleans_valid_choice(self):
         field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1')])
@@ -63,5 +70,4 @@ class BitmaskFieldTestCase(test.TestCase):
         self.assertEqual(5, TestModel.objects.first().bitmask)
 
     # TODO test optgroup choices
-    # TODO test last bit of all bitmask fields
     # TODO check choices validation
