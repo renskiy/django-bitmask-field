@@ -44,7 +44,7 @@ class BitmaskFormField(forms.TypedMultipleChoiceField):
         values = super(BitmaskFormField, self)._coerce(value)
         if values is None:
             return values
-        return reduce(long.__or__, values, 0)
+        return reduce(long.__or__, map(long, values), long(0))
 
 
 class BitmaskField(models.BinaryField):
@@ -87,7 +87,11 @@ class BitmaskField(models.BinaryField):
 
     @cached_property
     def all_values(self):
-        return reduce(long.__or__, next(zip(*self.all_choices)), 0)
+        return reduce(
+            long.__or__,
+            map(long, list(zip(*self.all_choices))[0]),
+            long(0),
+        )
 
     def validate(self, value, model_instance):
         # disable standard self.choices validation by resetting its value

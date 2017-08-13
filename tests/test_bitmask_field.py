@@ -1,3 +1,5 @@
+import unittest2
+
 from django import test
 from django.core import exceptions, serializers
 
@@ -6,7 +8,11 @@ from django_bitmask_field import BitmaskField, BitmaskFormField
 from .models import TestModel, ContributingModel, TestForm
 
 
-class BitmaskFieldTestCase(test.TestCase):
+class TestCase(test.TestCase, unittest2.TestCase):
+    pass
+
+
+class BitmaskFieldTestCase(TestCase):
 
     def test_bitmaskfield_return_error_on_invalid_choices(self):
         cases = dict(
@@ -92,7 +98,7 @@ class BitmaskFieldTestCase(test.TestCase):
                 self.assertEqual(expected_value, deserialized_model.bitmask)
 
 
-class BitmaskFormFieldTestCase(test.TestCase):
+class BitmaskFormFieldTestCase(TestCase):
 
     def test_is_valid(self):
         cases = dict(

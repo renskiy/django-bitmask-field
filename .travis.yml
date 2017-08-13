@@ -16,7 +16,7 @@ python:
     - "nightly"
 
 install:
-    - pip install -q coveralls Django==$DJANGO_VERSION
+    - pip install -q coveralls unittest2 Django==$DJANGO_VERSION
 
 script:
     coverage run --source=django_bitmask_field manage.py test --settings tests.settings
