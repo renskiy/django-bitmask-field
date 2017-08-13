@@ -65,9 +65,17 @@ class BitmaskFieldTestCase(test.TestCase):
                     field.clean(value, None),
 
     def test_bitmaskfield_write_and_read_from_db(self):
-        test_model = TestModel(bitmask=5)
-        test_model.save()
-        self.assertEqual(5, TestModel.objects.first().bitmask)
+        cases = dict(
+            empty=0,
+            single=1,
+            double=5,
+            null=None,
+        )
+        for case, value in cases.items():
+            with self.subTest(case=case):
+                test_model = TestModel(bitmask=value)
+                test_model.save()
+                self.assertEqual(value, TestModel.objects.get(id=test_model.id).bitmask)
 
     # TODO test optgroup choices
     # TODO check choices validation
