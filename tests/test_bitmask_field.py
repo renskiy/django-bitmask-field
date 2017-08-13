@@ -1,7 +1,7 @@
 from django import test
 from django.core import exceptions, serializers
 
-from django_bitmask_field import BitmaskField
+from django_bitmask_field import BitmaskField, BitmaskFormField
 
 from .models import TestModel, ContributingModel, TestForm
 
@@ -153,3 +153,34 @@ class BitmaskFormFieldTestCase(test.TestCase):
             with self.subTest(case=case):
                 form = TestForm(test_data['data'], initial=test_data['initial'])
                 self.assertEqual(test_data['has_changed'], form.has_changed())
+
+    def test_prepare_value(self):
+        cases = dict(
+            none=dict(
+                initial_value=None,
+                prepared_value=None,
+            ),
+            zero=dict(
+                initial_value=0,
+                prepared_value=0,
+            ),
+            prepared=dict(
+                initial_value=['1', '4'],
+                prepared_value=['1', '4'],
+            ),
+            single_value=dict(
+                initial_value=32,
+                prepared_value=[32],
+            ),
+            double_value=dict(
+                initial_value=33,
+                prepared_value=[1, 32],
+            ),
+        )
+        for case, test_data in cases.items():
+            with self.subTest(case=case):
+                form_field = BitmaskFormField()
+                self.assertEqual(
+                    test_data['prepared_value'],
+                    form_field.prepare_value(test_data['initial_value']),
+                )
