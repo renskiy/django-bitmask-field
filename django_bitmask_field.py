@@ -6,7 +6,7 @@ from django.core import checks, exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
 from django.utils.functional import cached_property
-from django.utils.six import integer_types, buffer_types
+from django.utils.six import integer_types, buffer_types, text_type
 from django.utils.six.moves import reduce
 from django.utils.translation import ugettext_lazy as _
 
@@ -110,6 +110,8 @@ class BitmaskField(models.BinaryField):
     def to_python(self, value):
         if isinstance(value, buffer_types):
             return bytes2int(force_bytes(value))
+        elif isinstance(value, text_type):
+            return int(value)
         return value
 
     def get_prep_value(self, value):

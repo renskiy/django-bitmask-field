@@ -1,5 +1,5 @@
 from django import test
-from django.core import exceptions
+from django.core import exceptions, serializers
 
 from django_bitmask_field import BitmaskField
 
@@ -78,7 +78,18 @@ class BitmaskFieldTestCase(test.TestCase):
                 test_model.save()
                 self.assertEqual(value, TestModel.objects.get(id=test_model.id).bitmask)
 
-    # TODO test serialization
+    def test_bitmaskfield_serialization_deserialization(self):
+        cases = dict(
+            none=None,
+            regualar=42,
+        )
+        for case, expected_value in cases.items():
+            with self.subTest(case=case):
+                model = TestModel(bitmask=expected_value)
+                serialized_data = serializers.serialize("xml", [model])
+                deserialized_data = list(serializers.deserialize('xml', serialized_data))
+                deserialized_model = deserialized_data[0].object
+                self.assertEqual(expected_value, deserialized_model.bitmask)
 
 
 class BitmaskFormFieldTestCase(test.TestCase):
