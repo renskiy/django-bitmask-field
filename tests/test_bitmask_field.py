@@ -30,6 +30,12 @@ class BitmaskFieldTestCase(TestCase):
                 error = errors[0]
                 self.assertEqual("all 'choices' must be of integer type.", error.msg)
 
+    def test_bitmaskfield_max_length_validation(self):
+        field = BitmaskField(max_length=1)
+        field.clean(256, None)
+        with self.assertRaises(exceptions.ValidationError):
+            field.clean(257, None)
+
     def test_bitmaskfield_cleans_valid_choice(self):
         field = BitmaskField(choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])])
         cases = dict(
@@ -60,6 +66,7 @@ class BitmaskFieldTestCase(TestCase):
     def test_bitmaskfield_raises_error_on_invalid_choice(self):
         field = BitmaskField(choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])])
         cases = dict(
+            none=None,
             single_invalid_bit=2,  # 0010
             two_invalid_bits=10,  # 1010
             partly_invalid_1=3,  # 0011
@@ -69,7 +76,7 @@ class BitmaskFieldTestCase(TestCase):
         for case, value in cases.items():
             with self.subTest(case=case):
                 with self.assertRaises(exceptions.ValidationError):
-                    field.clean(value, None),
+                    field.clean(value, None)
 
     def test_bitmaskfield_write_and_read_from_db(self):
         cases = dict(

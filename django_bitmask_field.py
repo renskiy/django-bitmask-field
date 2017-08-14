@@ -55,6 +55,16 @@ class BitmaskField(models.BinaryField):
         editable = kwargs.get('editable', True)
         super(BitmaskField, self).__init__(*args, **kwargs)
         self.editable = editable
+        self.validators = list(self.__validators)
+
+    @property
+    def __validators(self):
+        for validator in self.validators:
+            if isinstance(validator, validators.MaxLengthValidator):
+                max_value = 2 ** (validator.limit_value * 8)
+                yield validators.MaxValueValidator(max_value)
+            else:
+                yield validator
 
     def _check_choices(self):
         errors = super(BitmaskField, self)._check_choices()
