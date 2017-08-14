@@ -5,7 +5,6 @@ from django import forms
 from django.core import checks, exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
-from django.utils.functional import cached_property
 from django.utils.six import integer_types, buffer_types, text_type
 from django.utils.six.moves import reduce
 from django.utils.translation import ugettext_lazy as _
@@ -61,7 +60,7 @@ class BitmaskField(models.BinaryField):
         errors = super(BitmaskField, self)._check_choices()
         if not errors and self.choices and not all(
             isinstance(choice, integer_types) and choice >= 0
-            for choice, description in self.all_choices
+            for choice, description in self.flatchoices
         ):
             return [
                 checks.Error(
@@ -74,42 +73,29 @@ class BitmaskField(models.BinaryField):
     def deconstruct(self):
         return models.Field.deconstruct(self)
 
-    @cached_property
-    def all_choices(self):
-        result = []
-        for option_key, option_value in self.choices:
-            if isinstance(option_value, (list, tuple)):
-                for opt_key, opt_value in option_value:
-                    result.append((opt_key, opt_value))
-            else:
-                result.append((option_key, option_value))
-        return result
-
-    @cached_property
+    @property
     def all_values(self):
         return reduce(
             long.__or__,
-            map(long, list(zip(*self.all_choices))[0]),
+            map(long, list(zip(*self.flatchoices))[0]),
             long(0),
         )
 
     def validate(self, value, model_instance):
-        # disable standard self.choices validation by resetting its value
-        choices, self.choices = self.choices, None
         try:
             super(BitmaskField, self).validate(value, model_instance)
-        finally:
-            # resume original self.choices value
-            self.choices = choices
+        except exceptions.ValidationError as error:
+            if error.code != 'invalid_choice':
+                raise
 
         if (
-            choices
+            self.choices
             and value not in self.empty_values
             and value & self.all_values != value
         ):
             raise exceptions.ValidationError(
-                _('Value %(value)r contains disabled bit(s)'),
-                code='disabled_bits',
+                self.error_messages['invalid_choice'],
+                code='invalid_choice',
                 params={'value': value},
             )
 
