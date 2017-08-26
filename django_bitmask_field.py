@@ -16,11 +16,11 @@ def int2bytes(i):
     hex_value = '{0:x}'.format(i)
     # make length of hex_value a multiple of two
     hex_value = '0' * (len(hex_value) % 2) + hex_value
-    return codecs.decode(hex_value, 'hex')
+    return codecs.decode(hex_value, 'hex_codec')
 
 
 def bytes2int(b):
-    return long(codecs.encode(b, 'hex'), 16)
+    return long(codecs.encode(b, 'hex_codec'), 16)
 
 
 class BitmaskFormField(forms.TypedMultipleChoiceField):
