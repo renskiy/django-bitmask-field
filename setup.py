@@ -5,7 +5,7 @@ with open('README.rst') as description:
 
 setup(
     name='django-bitmask-field',
-    version='0.1.1',
+    version='0.1.2',
     author='Rinat Khabibiev',
     author_email='srenskiy@gmail.com',
     py_modules=['django_bitmask_field'],
@@ -23,11 +23,14 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Framework :: Django',
         'Framework :: Django :: 1.8',
         'Framework :: Django :: 1.9',
         'Framework :: Django :: 1.10',
         'Framework :: Django :: 1.11',
+        'Framework :: Django :: 2.0',
+        'Framework :: Django :: 2.1',
         'Operating System :: OS Independent',
         'Topic :: Database',
     ],

@@ -34,10 +34,6 @@ Example
             default=1 | 4,  # bit0 and bit2 are enabled by default
         )
 
-Admin site:
-
-.. image:: BitmaskFormField.png
-
 Install
 -------
 
