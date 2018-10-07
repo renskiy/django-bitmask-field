@@ -36,7 +36,7 @@ Example
 
 Admin site:
 
-.. image:: BitmaskFormField.png
+.. image:: https://github.com/renskiy/django-bitmask-field/blob/master/BitmaskFormField.png
 
 Install
 -------
