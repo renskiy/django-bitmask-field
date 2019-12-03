@@ -1,13 +1,29 @@
 import codecs
 import functools
+import sys
 
 from django import forms
 from django.core import checks, exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
-from django.utils.six import integer_types, buffer_types, text_type
-from django.utils.six.moves import reduce
+from six import integer_types, text_type
+from six.moves import reduce
 from django.utils.translation import ugettext_lazy as _
+
+# code taken from django/utils/six.py
+PY3 = sys.version_info[0] == 3
+if PY3:
+    memoryview = memoryview
+    buffer_types = (bytes, bytearray, memoryview)
+else:
+    # memoryview and buffer are not strictly equivalent, but should be fine for
+    # django core usage (mainly BinaryField). However, Jython doesn't support
+    # buffer (see http://bugs.jython.org/issue1521), so we have to be careful.
+    if sys.platform.startswith('java'):
+        memoryview = memoryview
+    else:
+        memoryview = buffer
+    buffer_types = (bytearray, memoryview)
 
 long = integer_types[-1]
 
