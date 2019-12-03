@@ -141,7 +141,7 @@ class BitmaskField(models.BinaryField):
             return value
         return int2bytes(value)
 
-    def from_db_value(self, value, expression, connection):
+    def from_db_value(self, value, expression, connection, context=None):
         return self.to_python(value)
 
     def formfield(self, **kwargs):
