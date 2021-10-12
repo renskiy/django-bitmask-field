@@ -28,7 +28,9 @@ class BitmaskFieldTestCase(TestCase):
                 errors = field.check()
                 self.assertEqual(1, len(errors))
                 error = errors[0]
-                self.assertEqual("all 'choices' must be of integer type.", error.msg)
+                self.assertEqual(
+                    "all 'choices' must be of integer type.", error.msg
+                )
 
     def test_bitmaskfield_max_length_validation(self):
         field = BitmaskField(max_length=1)
@@ -37,7 +39,9 @@ class BitmaskFieldTestCase(TestCase):
             field.clean(257, None)
 
     def test_bitmaskfield_cleans_valid_choice(self):
-        field = BitmaskField(choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])])
+        field = BitmaskField(
+            choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])]
+        )
         cases = dict(
             first_choice=dict(  # 0001
                 choice=1,
@@ -60,11 +64,18 @@ class BitmaskFieldTestCase(TestCase):
                 )
 
     def test_bitmaskfield_works_with_multibit_choices(self):
-        field = BitmaskField(choices=[(1, 'choice 0'), (4, 'choice 1'), ('optgroup', [(5, 'choice 2')])])
+        field = BitmaskField(
+            choices=[
+                (1, 'choice 0'), (4, 'choice 1'),
+                ('optgroup', [(5, 'choice 2')])
+            ]
+        )
         self.assertEqual(5, field.clean(5, None))
 
     def test_bitmaskfield_raises_error_on_invalid_choice(self):
-        field = BitmaskField(choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])])
+        field = BitmaskField(
+            choices=[(1, 'choice 0'), ('optgroup', [(4, 'choice 1')])]
+        )
         cases = dict(
             none=None,
             single_invalid_bit=2,  # 0010
@@ -89,7 +100,9 @@ class BitmaskFieldTestCase(TestCase):
             with self.subTest(case=case):
                 test_model = TestModel(bitmask=value)
                 test_model.save()
-                self.assertEqual(value, TestModel.objects.get(id=test_model.id).bitmask)
+                self.assertEqual(
+                    value, TestModel.objects.get(id=test_model.id).bitmask
+                )
 
     def test_bitmaskfield_serialization_deserialization(self):
         cases = dict(
@@ -100,7 +113,9 @@ class BitmaskFieldTestCase(TestCase):
             with self.subTest(case=case):
                 model = TestModel(bitmask=expected_value)
                 serialized_data = serializers.serialize("xml", [model])
-                deserialized_data = list(serializers.deserialize('xml', serialized_data))
+                deserialized_data = list(
+                    serializers.deserialize('xml', serialized_data)
+                )
                 deserialized_model = deserialized_data[0].object
                 self.assertEqual(expected_value, deserialized_model.bitmask)
 
@@ -164,7 +179,9 @@ class BitmaskFormFieldTestCase(TestCase):
         )
         for case, test_data in cases.items():
             with self.subTest(case=case):
-                form = TestForm(test_data['data'], initial=test_data['initial'])
+                form = TestForm(
+                    test_data['data'], initial=test_data['initial']
+                )
                 self.assertEqual(test_data['has_changed'], form.has_changed())
 
     def test_prepare_value(self):
