@@ -13,6 +13,9 @@ setup(
     license='MIT',
     description='BitmaskField implementation for Django ORM',
     long_description=long_description,
+    install_requires=[
+        'six>=1.16.0'
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
