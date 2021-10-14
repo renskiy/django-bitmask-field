@@ -5,9 +5,23 @@ from django import forms
 from django.core import checks, exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
-from django.utils.six import integer_types, buffer_types, text_type
-from django.utils.six.moves import reduce
 from django.utils.translation import ugettext_lazy as _
+from six import integer_types, text_type, PY3
+from six.moves import reduce
+
+if PY3:
+    memoryview = memoryview
+    buffer_types = (bytes, bytearray, memoryview)
+else:
+    # memoryview and buffer are not strictly equivalent, but should be fine for
+    # django core usage (mainly BinaryField). However, Jython doesn't support
+    # buffer (see http://bugs.jython.org/issue1521), so we have to be careful.
+    import sys
+    if sys.platform.startswith('java'):
+        memoryview = memoryview
+    else:
+        memoryview = buffer
+        buffer_types = (bytearray, memoryview)
 
 long = integer_types[-1]
 
@@ -125,7 +139,7 @@ class BitmaskField(models.BinaryField):
             return value
         return int2bytes(value)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection, context=None):
         return self.to_python(value)
 
     def formfield(self, **kwargs):
