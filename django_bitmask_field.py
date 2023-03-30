@@ -1,13 +1,20 @@
 import codecs
 import functools
+import django
 
 from django import forms
 from django.core import checks, exceptions, validators
 from django.db import models
 from django.utils.encoding import force_bytes
-from django.utils.translation import ugettext_lazy as _
 from six import integer_types, text_type, PY3
 from six.moves import reduce
+
+django_version = django.VERSION
+if django_version[0] == 4:
+    from django.utils.translation import gettext_lazy as _
+else:
+    from django.utils.translation import ugettext_lazy as _
+
 
 if PY3:
     memoryview = memoryview
